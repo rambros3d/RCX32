@@ -1,60 +1,100 @@
+// RCX_motor.cpp
 #include "RCX_motor.h"
 
-Motor2pwm::Motor2pwm(uint8_t pin1, uint8_t pin2, uint16_t pwmFrequency,uint8_t pwmResolution) {
-  _pin1 = pin1;
-  _pin2 = pin2;
-  _speed = 0;
-  _direction = false;
-  _pwmFrequency = pwmFrequency;
-  _pwmResolution = pwmResolution;
+
+RCX_Motors::RCX_Motors() {
+  motors = nullptr;
+  numMotors = 0;
+  pwmResoltuion = (1 << DefaultPwmResolution - 1);
 }
 
-void Motor2pwm::init() {
-  ledcAttach(_pin1, _pwmFrequency, _pwmResolution);
-  ledcAttach(_pin2, _pwmFrequency, _pwmResolution);
-}
+void RCX_Motors::add2pwmDriver(MotorType type, int8_t pwmPin1, int8_t pwmPin2, int8_t enablePin) {
+  Motor *newMotors = (Motor *)realloc(motors, (numMotors + 1) * sizeof(Motor));
+  if (newMotors == nullptr) {
+    return;  // Handle memory allocation error
+  }
+  motors = newMotors;
+  motors[numMotors].type = type;
 
-void Motor2pwm::set(uint8_t speed, bool direction) {
-  _speed = speed;
-  _direction = direction;
-  if (_direction) {
-    ledcWrite(_pin1, _speed);
-    ledcWrite(_pin2, 0);
+  motors[numMotors].invertPin1 = (pwmPin1 < 0) ? true : false;
+  motors[numMotors].invertPin2 = (pwmPin2 < 0) ? true : false;
+  motors[numMotors].pin1 = abs(pwmPin1);
+  motors[numMotors].pin2 = abs(pwmPin2);
+
+  if (enablePin == 0) {
+    motors[numMotors].driverType = TWO_PWM_DRIVER;
   } else {
-    ledcWrite(_pin1, 0);
-    ledcWrite(_pin2, _speed);
+    motors[numMotors].invertEnable = (enablePin < 0) ? true : false;
+    motors[numMotors].enPin = abs(enablePin);
+    motors[numMotors].driverType = TWO_PWM_EN_DRIVER;
+  }
+
+  numMotors++;
+}
+
+void RCX_Motors::add1pwmDriver(MotorType type, int8_t pwmPin, int8_t dirPin, int8_t enablePin) {
+  Motor *newMotors = (Motor *)realloc(motors, (numMotors + 1) * sizeof(Motor));
+  if (newMotors == nullptr) {
+    return;  // Handle memory allocation error
+  }
+  motors = newMotors;
+  motors[numMotors].type = type;
+
+  motors[numMotors].invertPin1 = (pwmPin < 0) ? true : false;
+  motors[numMotors].invertPin2 = (dirPin < 0) ? true : false;
+  motors[numMotors].pin1 = abs(pwmPin);
+  if(dirPin != 0) motors[numMotors].pin2 = abs(dirPin);
+
+  if (enablePin == 0) {
+    motors[numMotors].driverType = ONE_PWM_DRIVER;
+  } else {
+    motors[numMotors].invertEnable = (enablePin < 0) ? true : false;
+    motors[numMotors].enPin = abs(enablePin);
+    motors[numMotors].driverType = ONE_PWM_EN_DRIVER;
+  }
+
+  numMotors++;
+}
+
+void RCX_Motors::setSpeed(MotorType type, int16_t inputSpeed, bool direction) {
+  for (int i = 0; i < numMotors; i++) {
+    if (motors[i].type == type) {
+      ledcWrite(motors[i].pin1, direction ? pwmResoltuion : 0);
+      ledcWrite(motors[i].pin2, direction ? 0 : pwmResoltuion);
+    }
+    break;
   }
 }
-void Motor2pwm::coast() {  
-  ledcWrite(_pin1, (1 << _pwmResolution) - 1);
-  ledcWrite(_pin2, (1 << _pwmResolution) - 1);
-  _direction=0;
-  _speed = 0;
+
+
+void RCX_Motors::init(int16_t pwmFreq, int16_t pwmRes) {
+  for (int i = 0; i < numMotors; i++) {
+    switch (
+      motors[i].driverType) {
+      case TWO_PWM_DRIVER:
+        // 2 pwm pins for speed and direction
+        ledcAttach(motors[i].pin1, pwmFreq, pwmRes);
+        ledcAttach(motors[i].pin2, pwmFreq, pwmRes);
+        break;
+      case TWO_PWM_EN_DRIVER:
+        // 2 pwm pins for speed and direction and 1 enable pin
+        ledcAttach(motors[i].pin1, pwmFreq, pwmRes);
+        ledcAttach(motors[i].pin2, pwmFreq, pwmRes);
+        pinMode(motors[i].enPin, OUTPUT); // enable pin
+      case ONE_PWM_DRIVER:
+        // 1 pwm pin for speed and 1 digital pin for direction
+        ledcAttach(motors[i].pin1, pwmFreq, pwmRes); // pwm pin
+        pinMode(motors[i].pin2, OUTPUT);  // direction pin
+        break;
+      case ONE_PWM_EN_DRIVER:
+        // 1 pwm pin for speed and 1 digital pin for direction and 1 enable pin
+        ledcAttach(motors[i].pin1, pwmFreq, pwmRes); // pwm pin
+        pinMode(motors[i].pin2, OUTPUT);  // direction pin
+        pinMode(motors[i].enPin, OUTPUT); // enable pin
+        break;
+
+      default:
+        break;
+    }
+  }
 }
-
-void Motor2pwm::setSpeed(uint8_t speed) {
-  _speed = speed;
-  set(_speed, _direction);
-}
-
-void Motor2pwm::setDirection(bool direction) {
-  _direction = direction;
-  set(_speed, _direction);
-}
-
-bool Motor2pwm::getDirection() const {
-  return _direction;
-}
-
-uint8_t Motor2pwm::getSpeed() const {
-  return _speed;
-}
-
-void Motor2pwm::stop() {
-  _direction=0;
-  _speed = 0;
-  set(_speed, _direction);
-}
-
-
-
