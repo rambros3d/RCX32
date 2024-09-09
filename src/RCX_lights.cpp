@@ -28,14 +28,6 @@ void RCX_Lights::addLed(LedType type, int8_t pin, int8_t brightness) {
   // with this ledcOutputInvert
 }
 
-uint8_t RCX_Lights::getLedNum(LedType type) {
-  for (uint8_t i = 0; i < numLeds; i++) {
-    if (leds[i].type == type) {
-      return i;
-    }
-  }
-  return 0;
-}
 void RCX_Lights::turnOn(LedType type) {
   updateLed(type, HIGH);
 }
@@ -60,6 +52,7 @@ void RCX_Lights::updateLed(LedType type, bool ledstate, uint16_t fadeTime) {
   }
 }
 void RCX_Lights::updateLed(uint8_t LedNum, bool ledstate, uint16_t fadeTime) {
+  leds[LedNum].ledState = ledstate;
   if (fadeTime == 0) {
     ledcWrite(leds[LedNum].pin,
               invertPwm(ledstate ? leds[LedNum].ledDutyCycle : 0,
@@ -72,7 +65,6 @@ void RCX_Lights::updateLed(uint8_t LedNum, bool ledstate, uint16_t fadeTime) {
                        leds[LedNum].invert),
              fadeTime);
   }
-  leds[LedNum].ledState = ledstate;
 }
 
 uint16_t RCX_Lights::invertPwm(uint16_t dutyCycle, bool invert) {
@@ -91,6 +83,16 @@ void RCX_Lights::setBrightness(LedType type, int8_t brightness) {
   }
 }
 
+uint8_t RCX_Lights::getLedNum(LedType type) {
+  for (uint8_t i = 0; i < numLeds; i++) {
+    if (leds[i].type == type) {
+      return i;
+      break;
+    }
+  }
+  return 0;
+}
+
 bool RCX_Lights::getLedState(LedType type) {
   uint8_t ledNum = getLedNum(type);
   return leds[ledNum].ledState;
@@ -100,16 +102,40 @@ bool RCX_Lights::getLedState(uint8_t ledNum) {
 }
 
 void RCX_Lights::blink(LedType type, uint16_t onTime, uint16_t offTime) {
-  quickBlink(getLedNum(type), onTime, offTime);
+  uint8_t ledNum = getLedNum(type);
+  uint32_t currentTime = millis();
+
+  if (leds[ledNum].ledState) {
+    if (currentTime - leds[ledNum].timeElapsed >= onTime) {
+      leds[ledNum].ledState = false;
+      leds[ledNum].timeElapsed = currentTime;
+      updateLed(type, false);
+    }
+  } else {
+    if (offTime == 0) offTime = onTime;
+    if (currentTime - leds[ledNum].timeElapsed >= offTime) {
+      leds[ledNum].ledState = true;
+      leds[ledNum].timeElapsed = currentTime;
+      updateLed(type, true);
+    }
+  }
 }
 
 void RCX_Lights::quickBlink(uint8_t ledNum, uint16_t onTime, uint16_t offTime) {
-  uint32_t previousMillis = leds[ledNum].timeElapsed;
-  if ((millis() - previousMillis) >= onTime) {
-    currentState[ledNum] = !currentState[ledNum];
-    leds[numLeds].ledState = !leds[numLeds].ledState;
-    leds[ledNum].timeElapsed = millis();
-    updateLed(ledNum, !currentState[ledNum]);
-    // updateLed(ledNum, leds[numLeds].ledState);
+
+  uint32_t currentTime = millis();
+  if (leds[ledNum].ledState) {
+    if (currentTime - leds[ledNum].timeElapsed >= onTime) {
+      leds[ledNum].ledState = false;
+      leds[ledNum].timeElapsed = currentTime;
+      updateLed(ledNum, false);
+    }
+  } else {
+    if (offTime == 0) offTime = onTime;
+    if (currentTime - leds[ledNum].timeElapsed >= offTime) {
+      leds[ledNum].ledState = true;
+      leds[ledNum].timeElapsed = currentTime;
+      updateLed(ledNum, true);
+    }
   }
 }

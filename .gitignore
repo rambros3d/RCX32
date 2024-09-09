@@ -1,0 +1,11 @@
+# Arduino
+build/
+*.hex
+
+# PlatformIO
+.pio
+platformio.ini
+
+# VSCode
+.vscode/
+*.code-workspace

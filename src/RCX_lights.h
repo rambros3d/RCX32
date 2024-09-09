@@ -25,7 +25,6 @@ enum LedType {
   // exclusively used in locomotives
   WALKWAY_LIGHT,
   DITCH_LIGHT,
-  // Add more types as needed
 };
 
 struct Led {
@@ -62,7 +61,6 @@ private:
   uint16_t invertPwm(uint16_t dutyCycle, bool invert = 0);
   Led *leds;
   int8_t numLeds;
-  bool currentState[24];
   int16_t ledResoltuion;
 };
 
