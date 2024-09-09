@@ -25,6 +25,13 @@ enum LedType {
   // exclusively used in locomotives
   WALKWAY_LIGHT,
   DITCH_LIGHT,
+  // extra leds
+  LED1,
+  LED2,
+  LED3,
+  LED4,
+  LED5,
+  LED6,
 };
 
 struct Led {
@@ -53,7 +60,6 @@ public:
   void blink(LedType type, uint16_t onTime = 1000, uint16_t offTime = 0);
   void quickBlink(uint8_t ledNum, uint16_t onTime = 1000, uint16_t offTime = 0);
 
-  uint8_t getLedNum(LedType type);
   bool getLedState(LedType type);
   bool getLedState(uint8_t ledNum);
 

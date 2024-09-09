@@ -24,8 +24,7 @@ void RCX_Lights::addLed(LedType type, int8_t pin, int8_t brightness) {
   leds[numLeds].ledDutyCycle = (brightness * ledResoltuion / 100);
   numLeds++;
   ledcAttach(pin, DefaultLedFrequency, DefaultLedResolution);
-  // if(leds[numLeds].invert) ledcOutputInvert(pin, true); // there is an error
-  // with this ledcOutputInvert
+  // if(leds[numLeds].invert) ledcOutputInvert(pin, true); // there is an error with this ledcOutputInvert
 }
 
 void RCX_Lights::turnOn(LedType type) {
@@ -83,18 +82,8 @@ void RCX_Lights::setBrightness(LedType type, int8_t brightness) {
   }
 }
 
-uint8_t RCX_Lights::getLedNum(LedType type) {
-  for (uint8_t i = 0; i < numLeds; i++) {
-    if (leds[i].type == type) {
-      return i;
-      break;
-    }
-  }
-  return 0;
-}
-
 bool RCX_Lights::getLedState(LedType type) {
-  uint8_t ledNum = getLedNum(type);
+  uint8_t ledNum = type;
   return leds[ledNum].ledState;
 }
 bool RCX_Lights::getLedState(uint8_t ledNum) {
@@ -102,7 +91,7 @@ bool RCX_Lights::getLedState(uint8_t ledNum) {
 }
 
 void RCX_Lights::blink(LedType type, uint16_t onTime, uint16_t offTime) {
-  uint8_t ledNum = getLedNum(type);
+  uint8_t ledNum = type;
   uint32_t currentTime = millis();
 
   if (leds[ledNum].ledState) {
