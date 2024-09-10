@@ -2,18 +2,22 @@
 
 RCX_Motors motor;
 
+bool test;
+
 void setup() {
   Serial.begin(115200);
-  delay(2000);
-  motor.add1pwmDriver(MOTOR1, 2, -48);
-  delay(500);
+  delay(200);
+  motor.add2pwmDriver(MOTOR1, 2, 48);
+  //motor.add2pwmDriver(MOTOR1, 14, 15,11);
   motor.init();
+  Serial.print("code overflow ");
+  Serial.println(test);
 }
 
 void loop() {
-  motor.setSpeed(MOTOR1, 50, true);
-  delay(500);
-  motor.setSpeed(MOTOR1, 100, false);
+  motor.run(MOTOR1, 60, FORWARD);
+  delay(250);
+  motor.run(MOTOR1, 100, BACKWARD);
   delay(1000);
   delay(1);  // added for stability
 }
