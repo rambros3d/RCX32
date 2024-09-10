@@ -5,7 +5,6 @@
 
 #define DefaultPwmFrequency 24000
 #define DefaultPwmResolution 10
-#define DefaultControlResolution 100
 
 enum MotorType : uint8_t {
   DRIVER_MOTOR,
@@ -42,7 +41,7 @@ struct Motor {
   bool invertPin3;
   int16_t motorSpeed;
   bool motorDirection;
-  bool motorState;
+  bool motorEnabled = 1;
   uint32_t timeElapsed = 0;
 };
 
@@ -55,6 +54,8 @@ public:
   void init(int16_t pwmFrequency = DefaultPwmFrequency, int16_t pwmResolution = DefaultPwmResolution);
   void run(MotorType type, int16_t inputSpeed, bool inputDirection = 1);
   void runMotorId(uint8_t motorNum, int16_t inputSpeed, bool inputDirection = 1);
+  void stop(MotorType type);
+  void stopAll();
   void update(MotorType type);
   void updateAll();
 
