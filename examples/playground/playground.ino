@@ -7,17 +7,20 @@ bool test;
 void setup() {
   Serial.begin(115200);
   delay(200);
-  motor.add2pwmDriver(MOTOR1, 2, 48);
-  //motor.add2pwmDriver(MOTOR1, 14, 15,11);
+  // motor.add2pwmDriver(MOTOR1, 2, 48);
+  motor.add2pwmDriver(MOTOR1, 12, 13, 11);
   motor.init();
-  Serial.print("code overflow ");
-  Serial.println(test);
 }
 
 void loop() {
-  motor.run(MOTOR1, 60, FORWARD);
-  delay(250);
-  motor.run(MOTOR1, 100, BACKWARD);
+  motor.setSpeed(MOTOR1, 40, FORWARD);
+  motor.update(MOTOR1);
   delay(1000);
-  delay(1);  // added for stability
+  // motor.setSpeed(MOTOR1, 100, BACKWARD);
+  // motor.update(MOTOR1);
+  // motor.run(MOTOR1, 80, REVERSE);
+  motor.setSpeed(MOTOR1, 60, REVERSE);
+  motor.update(MOTOR1);
+  delay(500);
+  delay(1); // added for stability
 }
