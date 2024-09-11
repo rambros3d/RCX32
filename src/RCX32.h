@@ -1,5 +1,5 @@
-#ifndef RCx32_H
-#define RCx32_H
+#ifndef RCX32_H
+#define RCX32_H
 
 #include "RCX_physics.h"
 #include "RCX_motor.h"

@@ -55,6 +55,13 @@ void RCX_Motors::add1pwmDriver(MotorType type, int8_t pwmPin, int8_t dirPin, int
 }
 
 void RCX_Motors::setSpeed(MotorType type, int16_t inputSpeed, bool inputDirection) {
+  for (uint8_t i = 0; i < numMotors; i++) {
+    if (motors[i].type == type) {
+      motors[i].motorEnabled = true;
+      motors[i].motorSpeed = inputSpeed;
+      motors[i].motorDirection = inputDirection;
+    }
+  }
 }
 
 void RCX_Motors::updateAll() {
@@ -74,7 +81,22 @@ void RCX_Motors::update(MotorType type) {
 void RCX_Motors::run(MotorType type, int16_t inputSpeed, bool inputDirection) {
   for (uint8_t i = 0; i < numMotors; i++) {
     if (motors[i].type == type) {
+      motors[i].motorEnabled = true;
       runMotorId(i, inputSpeed, inputDirection);
+    }
+  }
+}
+void RCX_Motors::stopAll() {
+  for (uint8_t i = 0; i < numMotors; i++) {
+    motors[i].motorEnabled = false;
+    runMotorId(i, 0, true);
+  }
+}
+void RCX_Motors::stop(MotorType type) {
+  for (uint8_t i = 0; i < numMotors; i++) {
+    if (motors[i].type == type) {
+      motors[i].motorEnabled = false;
+      runMotorId(i, 0, true);
     }
   }
 }
@@ -83,42 +105,72 @@ void RCX_Motors::runMotorId(uint8_t motorNum, int16_t inputSpeed, bool inputDire
   if (inputSpeed < 0) {
     inputSpeed = -inputSpeed;
     inputDirection = !inputDirection;
+  } else {
+    inputDirection = !inputDirection;
   }
-  int16_t pwmDuty = (inputSpeed * pwmResoltuion / DefaultControlResolution);
+  int16_t pwmDuty = inputSpeed;
   pwmDuty = constrain(pwmDuty, 0, pwmResoltuion);
-  switch (motors[motorNum].driverType) {
-    case TWO_PWM_DRIVER:
-      if (inputDirection) {
+
+  if (motors[motorNum].motorEnabled) {
+    switch (motors[motorNum].driverType) {
+      case TWO_PWM_DRIVER:
+        if (inputDirection) {
+          ledcWrite(motors[motorNum].pin1, motors[motorNum].invertPin1 ? pwmResoltuion - pwmDuty : pwmDuty);
+          ledcWrite(motors[motorNum].pin2, motors[motorNum].invertPin2 ? pwmResoltuion : 0);
+        } else {
+          ledcWrite(motors[motorNum].pin1, motors[motorNum].invertPin1 ? pwmResoltuion : 0);
+          ledcWrite(motors[motorNum].pin2, motors[motorNum].invertPin2 ? pwmResoltuion - pwmDuty : pwmDuty);
+        }
+        break;
+      case TWO_PWM_EN_DRIVER:
+        digitalWrite(motors[motorNum].pin3, !motors[motorNum].invertPin3);
+        if (inputDirection) {
+          ledcWrite(motors[motorNum].pin1, motors[motorNum].invertPin1 ? pwmResoltuion - pwmDuty : pwmDuty);
+          ledcWrite(motors[motorNum].pin2, motors[motorNum].invertPin2 ? pwmResoltuion : 0);
+        } else {
+          ledcWrite(motors[motorNum].pin1, motors[motorNum].invertPin1 ? pwmResoltuion : 0);
+          ledcWrite(motors[motorNum].pin2, motors[motorNum].invertPin2 ? pwmResoltuion - pwmDuty : pwmDuty);
+        }
+        break;
+      case ONE_PWM_DRIVER:
         ledcWrite(motors[motorNum].pin1, motors[motorNum].invertPin1 ? pwmResoltuion - pwmDuty : pwmDuty);
-        ledcWrite(motors[motorNum].pin2, motors[motorNum].invertPin2 ? pwmResoltuion : 0);
-      } else {
-        ledcWrite(motors[motorNum].pin1, motors[motorNum].invertPin1 ? pwmResoltuion : 0);
-        ledcWrite(motors[motorNum].pin2, motors[motorNum].invertPin2 ? pwmResoltuion - pwmDuty : pwmDuty);
-      }
-      break;
-    case TWO_PWM_EN_DRIVER:
-      if (inputDirection) {
+        digitalWrite(motors[motorNum].pin2, motors[motorNum].invertPin2 ? !inputDirection : inputDirection);
+        break;
+      case ONE_PWM_EN_DRIVER:
+        digitalWrite(motors[motorNum].pin3, !motors[motorNum].invertPin3);
         ledcWrite(motors[motorNum].pin1, motors[motorNum].invertPin1 ? pwmResoltuion - pwmDuty : pwmDuty);
-        ledcWrite(motors[motorNum].pin2, motors[motorNum].invertPin2 ? pwmResoltuion : 0);
-      } else {
+        digitalWrite(motors[motorNum].pin2, motors[motorNum].invertPin2 ? !inputDirection : inputDirection);
+        break;
+      default:
+        break;
+    }
+  } else {
+    switch (motors[motorNum].driverType) {
+      case TWO_PWM_DRIVER:
         ledcWrite(motors[motorNum].pin1, motors[motorNum].invertPin1 ? pwmResoltuion : 0);
-        ledcWrite(motors[motorNum].pin2, motors[motorNum].invertPin2 ? pwmResoltuion - pwmDuty : pwmDuty);
-      }
-      digitalWrite(motors[motorNum].pin3, !motors[motorNum].invertPin3);
-      break;
-    case ONE_PWM_DRIVER:
-      ledcWrite(motors[motorNum].pin1, motors[motorNum].invertPin1 ? pwmResoltuion - pwmDuty : pwmDuty);
-      digitalWrite(motors[motorNum].pin2, motors[motorNum].invertPin2 ? !inputDirection : inputDirection);
-      break;
-    case ONE_PWM_EN_DRIVER:
-      ledcWrite(motors[motorNum].pin1, motors[motorNum].invertPin1 ? pwmResoltuion - pwmDuty : pwmDuty);
-      digitalWrite(motors[motorNum].pin2, motors[motorNum].invertPin2 ? !inputDirection : inputDirection);
-      digitalWrite(motors[motorNum].pin3, !motors[motorNum].invertPin3);
-      break;
-    default:
-      break;
+        ledcWrite(motors[motorNum].pin2, motors[motorNum].invertPin2 ? pwmResoltuion : 0);
+        break;
+      case TWO_PWM_EN_DRIVER:
+        ledcWrite(motors[motorNum].pin1, motors[motorNum].invertPin1 ? pwmResoltuion : 0);
+        ledcWrite(motors[motorNum].pin2, motors[motorNum].invertPin2 ? pwmResoltuion : 0);
+        digitalWrite(motors[motorNum].pin3, motors[motorNum].invertPin3);
+        break;
+      case ONE_PWM_DRIVER:
+        ledcWrite(motors[motorNum].pin1, motors[motorNum].invertPin1 ? pwmResoltuion : 0);
+        digitalWrite(motors[motorNum].pin2, motors[motorNum].invertPin2);
+        break;
+      case ONE_PWM_EN_DRIVER:
+        ledcWrite(motors[motorNum].pin1, motors[motorNum].invertPin1 ? pwmResoltuion : 0);
+        digitalWrite(motors[motorNum].pin2, motors[motorNum].invertPin2);
+        digitalWrite(motors[motorNum].pin3, motors[motorNum].invertPin3);
+        break;
+      default:
+        break;
+    }
   }
 }
+
+
 
 void RCX_Motors::init(int16_t pwmFreq, int16_t pwmRes) {
   for (int i = 0; i < numMotors; i++) {
@@ -134,6 +186,7 @@ void RCX_Motors::init(int16_t pwmFreq, int16_t pwmRes) {
         ledcAttach(motors[i].pin1, pwmFreq, pwmRes);
         ledcAttach(motors[i].pin2, pwmFreq, pwmRes);
         pinMode(motors[i].pin3, OUTPUT);  // enable pin
+        break;
       case ONE_PWM_DRIVER:
         // 1 pwm pin for speed and 1 digital pin for direction
         ledcAttach(motors[i].pin1, pwmFreq, pwmRes);  // pwm pin

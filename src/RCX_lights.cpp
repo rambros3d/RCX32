@@ -43,28 +43,6 @@ void RCX_Lights::fadeOff(LedType type, uint16_t fadeTime) {
   updateLed(type, LOW, fadeTime);
 }
 
-void RCX_Lights::updateLed(LedType type, bool ledstate, uint16_t fadeTime) {
-  for (uint8_t i = 0; i < numLeds; i++) {
-    if (leds[i].type == type) {
-      updateLed(i, ledstate, fadeTime);
-    }
-  }
-}
-void RCX_Lights::updateLed(uint8_t LedNum, bool ledstate, uint16_t fadeTime) {
-  leds[LedNum].ledState = ledstate;
-  if (fadeTime == 0) {
-    ledcWrite(leds[LedNum].pin,
-              invertPwm(ledstate ? leds[LedNum].ledDutyCycle : 0,
-                        leds[LedNum].invert));
-  } else {
-    ledcFade(leds[LedNum].pin,
-             invertPwm(ledstate ? 0 : leds[LedNum].ledDutyCycle,
-                       leds[LedNum].invert),
-             invertPwm(ledstate ? leds[LedNum].ledDutyCycle : 0,
-                       leds[LedNum].invert),
-             fadeTime);
-  }
-}
 
 uint16_t RCX_Lights::invertPwm(uint16_t dutyCycle, bool invert) {
   if (invert) {
@@ -86,45 +64,68 @@ bool RCX_Lights::getLedState(LedType type) {
   uint8_t ledNum = type;
   return leds[ledNum].ledState;
 }
-bool RCX_Lights::getLedState(uint8_t ledNum) {
-  return leds[ledNum].ledState;
-}
 
 void RCX_Lights::blink(LedType type, uint16_t onTime, uint16_t offTime) {
+  // This function blinks a single led on and off at a given rate.
+  // It keeps track of the last time the led state was changed,
+  // and only changes the state if the time since the last change
+  // is greater than the given onTime or offTime.
+
+  // The led to blink is identified by the LedType enum.
+  // The LedType is used as an index into the array of led objects.
   uint8_t ledNum = type;
   uint32_t currentTime = millis();
 
+  // If the led is currently on, change it to off if enough time has passed.
   if (leds[ledNum].ledState) {
     if (currentTime - leds[ledNum].timeElapsed >= onTime) {
+      // Set the led state to off, and update the time elapsed.
       leds[ledNum].ledState = false;
       leds[ledNum].timeElapsed = currentTime;
+      // Call the updateLed function to set the actual led state.
       updateLed(type, false);
     }
   } else {
+    // If the led is currently off, change it to on if enough time has passed.
+    // If offTime is 0, use the same time as onTime.
     if (offTime == 0) offTime = onTime;
     if (currentTime - leds[ledNum].timeElapsed >= offTime) {
+      // Set the led state to on, and update the time elapsed.
       leds[ledNum].ledState = true;
       leds[ledNum].timeElapsed = currentTime;
+      // Call the updateLed function to set the actual led state.
       updateLed(type, true);
     }
   }
 }
 
-void RCX_Lights::quickBlink(uint8_t ledNum, uint16_t onTime, uint16_t offTime) {
 
-  uint32_t currentTime = millis();
-  if (leds[ledNum].ledState) {
-    if (currentTime - leds[ledNum].timeElapsed >= onTime) {
-      leds[ledNum].ledState = false;
-      leds[ledNum].timeElapsed = currentTime;
-      updateLed(ledNum, false);
-    }
-  } else {
-    if (offTime == 0) offTime = onTime;
-    if (currentTime - leds[ledNum].timeElapsed >= offTime) {
-      leds[ledNum].ledState = true;
-      leds[ledNum].timeElapsed = currentTime;
-      updateLed(ledNum, true);
+void RCX_Lights::updateLed(LedType type, bool ledstate, uint16_t fadeTime) {
+  for (uint8_t i = 0; i < numLeds; i++) {
+    if (leds[i].type == type) {
+      updateLed(i, ledstate, fadeTime);
     }
   }
+}
+void RCX_Lights::updateLed(uint8_t led_id, bool ledstate, uint16_t fadeTime) {
+  leds[led_id].ledState = ledstate;
+  if (fadeTime == 0) {
+    ledcWrite(leds[led_id].pin,
+              invertPwm(ledstate ? leds[led_id].ledDutyCycle : 0,
+                        leds[led_id].invert));
+  } else {
+    ledcFade(leds[led_id].pin,
+             invertPwm(ledstate ? 0 : leds[led_id].ledDutyCycle,
+                       leds[led_id].invert),
+             invertPwm(ledstate ? leds[led_id].ledDutyCycle : 0,
+                       leds[led_id].invert),
+             fadeTime);
+  }
+}
+
+void RCX_Lights::breathe(LedType type, int16_t breatheTime, bool defaultState, bool repeatAgain) {
+}
+
+
+void RCX_Lights::breathing(LedType type, int16_t breatheTime, int16_t delayTime) {
 }
