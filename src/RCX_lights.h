@@ -41,6 +41,7 @@ struct Led {
   int16_t ledDutyCycle;
   int16_t ledFrequency;
   bool ledState;
+  int16_t smoothTime = 500;
   uint32_t timeElapsed = 0;
 };
 
@@ -49,7 +50,7 @@ public:
   RCX_Lights();
   void addLed(LedType type, int8_t pin, int8_t brightness = 100);
   void updateLed(LedType type, bool ledstate, uint16_t fadeTime = 0);
-  void updateLed(uint8_t LedNum, bool ledstate, uint16_t fadeTime = 0);
+  void updateLed(uint8_t led_id, bool ledstate, uint16_t fadeTime = 0);
   void turnOn(LedType type);
   void turnOff(LedType type);
   void fadeOn(LedType type, uint16_t fadeTime = DefaultFadeTime);
@@ -58,10 +59,10 @@ public:
   void setFrequency(LedType type, int16_t ledFrequency = DefaultLedFrequency);
 
   void blink(LedType type, uint16_t onTime = 1000, uint16_t offTime = 0);
-  void quickBlink(uint8_t ledNum, uint16_t onTime = 1000, uint16_t offTime = 0);
+  void breathe(LedType type, int16_t breatheTime = 1000, bool defaultState = 1, bool repeatAgain = 0);
+  void breathing(LedType type, int16_t breatheTime = 1000, int16_t delayTime = 0);
 
   bool getLedState(LedType type);
-  bool getLedState(uint8_t ledNum);
 
 private:
   uint16_t invertPwm(uint16_t dutyCycle, bool invert = 0);
