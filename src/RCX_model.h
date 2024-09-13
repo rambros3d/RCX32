@@ -16,3 +16,5 @@ class RCX_Model {
 public:
   RCX_Model();
 };
+
+#endif
