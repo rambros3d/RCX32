@@ -7,7 +7,8 @@
 #define DefaultLedResolution 10
 #define DefaultFadeTime 500
 
-#define maxChannels 8  // ESP32S3 has only 8 ledc channels
+#define maxChannels 8   // ESP32S3 has only 8 ledc channels
+#define maxLedTypes 15  // ESP32S3 has only 8 ledc channels
 
 enum LedType : uint8_t {
   // common lights
@@ -33,6 +34,11 @@ enum LedType : uint8_t {
   LED3 = 3,
   LED4 = 4,
   LED5 = 5,
+  LED6 = 6,
+  LED7 = 7,
+  LED8 = 8,
+  LED9 = 9,
+  LED10 = 10,
 };
 
 enum LedState : uint8_t {
@@ -43,8 +49,6 @@ class RCX_Lights {
 public:
   RCX_Lights();
   void addLed(LedType type, int8_t pin);
-  void removeLed(int8_t pin);
-
 
   void turnOn(LedType type);
   void turnOff(LedType type);
@@ -62,13 +66,14 @@ public:
   void breathe(LedType type, int16_t breatheTime = 1000, bool defaultState = 1, bool repeatAgain = 0);
   void breathing(LedType type, int16_t breatheTime = 1000, int16_t delayTime = 0);
 
-  bool getChannel(LedType type);
+  int8_t getChannel(LedType type);
+  void printDebug();  // Debug
 
   struct Led {
     int8_t pin[4] = { 127, 127, 127, 127 };  // 4 leds can be attached to same type
-    int8_t channel;
+    int8_t channel = 127;
   };
-  Led leds[10];  //  upto 10 types can be used at once
+  Led leds[maxLedTypes];  //  upto 15 types can be used at once
 
   struct LedChannels {
     LedType type;
