@@ -3,12 +3,59 @@
 #ifndef RCX_LIGHTS_H
 #define RCX_LIGHTS_H
 
+#include <AceRoutine.h>
+using namespace ace_routine;
+
 #define DefaultLedFrequency 4000
 #define DefaultLedResolution 10
 #define DefaultFadeTime 500
 
-#define maxChannels 8   // ESP32S3 has only 8 ledc channels
-#define maxLedTypes 15  // ESP32S3 has only 8 ledc channels
+#define maxChannels 8  // ESP32S3 has only 8 ledc channels
+#define maxLeds 4      // max number os led pins per constructor
+
+class RCX_lights : public Coroutine {
+public:
+  RCX_lights(int8_t pin1, int8_t pin2 = 127, int8_t pin3 = 127, int8_t pin4 = 127);
+  void init();
+  void turnOn();
+  void turnOff();
+  void setState(bool state);
+
+  void fadeOn(uint16_t fadeTime = DefaultFadeTime);
+  void fadeOff(uint16_t fadeTime = DefaultFadeTime);
+  void attachPWM();
+  void detachPWM();
+
+  void _applyFade(bool state, uint16_t fadeTime);
+
+  void blink(uint16_t onTime = 500);
+  void blink(uint16_t onTime, uint16_t offTime);
+  void fadeOnce(int16_t breatheTime = 1000);
+  void breathing(int16_t breatheTime = 1000, int16_t delayTime = 0);
+  /* 
+  void setBrightness(uint8_t brightness);
+  void setPwmDuty(uint16_t ledDutyCycle);
+  void setFrequency(int16_t ledFrequency = DefaultLedFrequency);
+  int8_t getChannel();
+  void printDebug();  // Debug */
+  int runCoroutine() override;
+
+private:
+  void _switchLed(bool state);
+  void _fadeOnLed(int16_t fadeTime);
+  void _fadeOffLed(int16_t fadeTime);
+  int8_t _pins[4];
+  int8_t _channel;
+  int8_t _ledState;
+  int16_t _onTime;
+  int16_t _offTime;
+  int16_t _smoothOnTime;
+  int16_t _smoothOffTime;
+  int16_t _repeat;
+  int16_t _ledDutyCycle;
+  int16_t _ledFrequency;
+  int16_t _ledResoltuion;
+};
 
 enum LedType : uint8_t {
   // common lights
@@ -28,69 +75,13 @@ enum LedType : uint8_t {
   // exclusively used in locomotives
   WALKWAY_LIGHT_ID = 13,
   DITCH_LIGHT_ID = 14,
-  // extra leds with same types
-  LED1 = 1,
-  LED2 = 2,
-  LED3 = 3,
-  LED4 = 4,
-  LED5 = 5,
-  LED6 = 6,
-  LED7 = 7,
-  LED8 = 8,
-  LED9 = 9,
-  LED10 = 10,
 };
-
-enum LedState : uint8_t {
-  ON = 1,
+enum LedStates : uint8_t {
   OFF = 0,
-};
-class RCX_Lights {
-public:
-  RCX_Lights();
-  void addLed(LedType type, int8_t pin);
-
-  void turnOn(LedType type);
-  void turnOff(LedType type);
-  void digitalState(LedType type, bool state);
-
-  void fadeOn(LedType type, uint16_t fadeTime = DefaultFadeTime);
-  void fadeOff(LedType type, uint16_t fadeTime = DefaultFadeTime);
-  void applyFade(LedType type, bool state, uint16_t fadeTime);
-
-  void setBrightness(LedType type, uint8_t brightness);
-  void setPwmDuty(LedType type, uint16_t ledDutyCycle);
-  void setFrequency(LedType type, int16_t ledFrequency = DefaultLedFrequency);
-
-  void blink(LedType type, uint16_t onTime = 1000, uint16_t offTime = 0);
-  void breathe(LedType type, int16_t breatheTime = 1000, bool defaultState = 1, bool repeatAgain = 0);
-  void breathing(LedType type, int16_t breatheTime = 1000, int16_t delayTime = 0);
-
-  int8_t getChannel(LedType type);
-  void printDebug();  // Debug
-
-  struct Led {
-    int8_t pin[4] = { 127, 127, 127, 127 };  // 4 leds can be attached to same type
-    int8_t channel = 127;
-  };
-  Led leds[maxLedTypes];  //  upto 15 types can be used at once
-
-  struct LedChannels {
-    LedType type;
-    int16_t onTime;
-    int16_t offTime;
-    int16_t smoothTime = 500;
-    int16_t ledDutyCycle;
-    int16_t ledFrequency;
-  };
-  LedChannels chData[maxChannels];
-
-private:
-  void _attachPWM(LedType type);
-  void _detachPWM(LedType type);
-  int numLeds;
-  int16_t ledResoltuion;
-  uint16_t channelBitMask = 0b0000000000000000;  // track used ledc channels
+  ON = 1,
+  FADE = 2,
+  BLINKING = 3,
+  BREATHING = 4,
 };
 
 #endif
